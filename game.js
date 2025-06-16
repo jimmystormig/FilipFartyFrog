@@ -407,6 +407,85 @@ function ensureAudioWorks() {
     }
 }
 
+// Prepare all audio elements for better performance and reliability
+function prepareAllAudioElements() {
+    console.log('Preparing all audio elements...');
+    
+    // Prepare main audio elements
+    const fartSound = document.getElementById('fart-sound');
+    const hitSound = document.getElementById('hit-sound');
+    
+    if (fartSound) {
+        try {
+            fartSound.volume = 0.8;
+            fartSound.preload = 'auto';
+            fartSound.load(); // Force reload
+            console.log('Fart sound element prepared');
+        } catch (e) {
+            console.log('Error preparing fart sound:', e);
+        }
+    }
+    
+    if (hitSound) {
+        try {
+            hitSound.volume = 0.8;
+            hitSound.preload = 'auto';
+            hitSound.load(); // Force reload
+            console.log('Hit sound element prepared');
+        } catch (e) {
+            console.log('Error preparing hit sound:', e);
+        }
+    }
+    
+    // Create additional audio elements that are referenced in the code but don't exist in HTML
+    createAdditionalAudioElements();
+}
+
+// Create additional audio elements that are referenced in the code
+function createAdditionalAudioElements() {
+    // Create silent sound element for audio unlocking
+    if (!document.getElementById('silent-sound')) {
+        const silentSound = document.createElement('audio');
+        silentSound.id = 'silent-sound';
+        silentSound.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // Empty WAV
+        silentSound.preload = 'auto';
+        silentSound.volume = 0.01;
+        document.body.appendChild(silentSound);
+        console.log('Created silent-sound element');
+    }
+    
+    // Create second silent sound element
+    if (!document.getElementById('silent-sound-2')) {
+        const silentSound2 = document.createElement('audio');
+        silentSound2.id = 'silent-sound-2';
+        silentSound2.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='; // Empty WAV
+        silentSound2.preload = 'auto';
+        silentSound2.volume = 0.01;
+        document.body.appendChild(silentSound2);
+        console.log('Created silent-sound-2 element');
+    }
+    
+    // Create alternative fart sound element for fallback
+    if (!document.getElementById('alt-fart-sound')) {
+        const altFartSound = document.createElement('audio');
+        altFartSound.id = 'alt-fart-sound';
+        altFartSound.src = 'sounds/fart.mp3';
+        altFartSound.preload = 'auto';
+        altFartSound.volume = 0.5;
+        document.body.appendChild(altFartSound);
+        console.log('Created alt-fart-sound element');
+    }
+    
+    // Create audio status element if it doesn't exist
+    if (!document.getElementById('audio-status')) {
+        const audioStatus = document.createElement('div');
+        audioStatus.id = 'audio-status';
+        audioStatus.style.cssText = 'position: absolute; top: 50px; left: 10px; color: lime; font-size: 12px; background: rgba(0,0,0,0.8); padding: 3px 6px; border-radius: 3px; font-family: monospace; z-index: 999; display: none;';
+        document.body.appendChild(audioStatus);
+        console.log('Created audio-status element');
+    }
+}
+
 // Initialize game
 function init() {
     // Cancel any existing animation frame to prevent multiple loops
@@ -905,48 +984,48 @@ function playFallbackSound(type, fartType = '') {
             
             resumePromise.then(() => {
                 console.log('AudioContext resumed, now playing sound');
-                playActualSound();
+                playActualSound(type, fartType);
             }).catch(error => {
                 console.error('Failed to resume audio context:', error);
                 
                 // Fallback to HTML5 audio
-                tryHtmlAudioFallback();
+                tryHtmlAudioFallback(type);
             });
         } else {
-            playActualSound();
+            playActualSound(type, fartType);
         }
     } catch (e) {
         console.error(`Failed to play ${type} sound:`, e);
         
         // Try HTML5 audio as a last resort
-        tryHtmlAudioFallback();
+        tryHtmlAudioFallback(type);
     }
     
     // Main sound playing function
-    function playActualSound() {
-        if (type === 'fart') {
+    function playActualSound(soundType, soundFartType) {
+        if (soundType === 'fart') {
             try {
                 // Only try realistic fart sound if we have a working audio context
                 if (audioContext && audioContext.state === 'running') {
-                    playRealisticFartSound(fartType);
+                    playRealisticFartSound(soundFartType);
                 } else {
                     // Fall back to HTML5 audio immediately if no audio context
-                    tryHtmlAudioFallback();
+                    tryHtmlAudioFallback(soundType);
                 }
             } catch (innerError) {
                 console.error(`Error in realistic sound generation: ${innerError}`);
                 // Fall back to HTML5 audio
-                tryHtmlAudioFallback();
+                tryHtmlAudioFallback(soundType);
             }
-        } else if (type === 'hit') {
+        } else if (soundType === 'hit') {
             playSimpleHitSound();
         }
         
-        console.log(`${type} sound played successfully`);
+        console.log(`${soundType} sound played successfully`);
     }
     
     // Last resort fallback using HTML5 Audio
-    function tryHtmlAudioFallback() {
+    function tryHtmlAudioFallback(soundType) {
         try {
             // Try using alternative audio element first which may avoid AbortError
             const altAudio = document.getElementById('alt-fart-sound');
@@ -966,29 +1045,29 @@ function playFallbackSound(type, fartType = '') {
                     }).catch(e => {
                         console.log('Alternative audio failed:', e);
                         // Continue with standard approach
-                        tryStandardAudio();
+                        tryStandardAudio(soundType);
                     });
                     return; // Exit if we've started the play attempt
                 }
             }
             
             // Fall through to standard audio if alt audio not available
-            tryStandardAudio();
+            tryStandardAudio(soundType);
             
         } catch (e) {
             console.error('Error in HTML5 audio fallback:', e);
         }
         
-        function tryStandardAudio() {
+        function tryStandardAudio(soundType) {
             // Create a fresh audio element to avoid abort errors
             const freshAudio = new Audio();
             
-            if (type === 'fart') {
+            if (soundType === 'fart') {
                 console.log('Trying HTML5 Audio fallback for fart sound');
                 freshAudio.src = 'sounds/fart.mp3';
                 freshAudio.volume = 0.8;
                 freshAudio.play().catch(e => console.log('Fresh audio fallback failed:', e));
-            } else if (type === 'hit') {
+            } else if (soundType === 'hit') {
                 console.log('Trying HTML5 Audio fallback for hit sound');
                 freshAudio.src = 'sounds/hit.mp3';
                 freshAudio.volume = 0.8;
@@ -1102,243 +1181,201 @@ function updateAudioStatus(status, autoHide = true) {
 
 // Creates a wet sounding fart with bubbles
 function createWetFart(duration, now) {
-    // Create multiple fart bubble components - fewer bubbles for more realism
-    const numBubbles = 3 + Math.floor(Math.random() * 3); // 3-5 bubbles
-    const bubbleTime = duration / (numBubbles + 1.5); // Increase spacing
-    
-    // Create master gain with higher initial volume for wetness
     const masterGain = audioContext.createGain();
-    masterGain.gain.setValueAtTime(0.75, now); // Slightly lower volume
-    masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.2);
+    masterGain.gain.setValueAtTime(0.7, now);
+    masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.15);
     
-    // Create compressor for that "squished" sound
+    // Gentle compression for natural dynamics while preserving wetness
     const compressor = audioContext.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-24, now);
-    compressor.knee.setValueAtTime(15, now); // Less extreme compression knee
-    compressor.ratio.setValueAtTime(12, now);
-    compressor.attack.setValueAtTime(0.002, now); // Faster attack
-    compressor.release.setValueAtTime(0.15, now); // Faster release
+    compressor.threshold.setValueAtTime(-20, now);
+    compressor.knee.setValueAtTime(10, now);
+    compressor.ratio.setValueAtTime(8, now);
+    compressor.attack.setValueAtTime(0.003, now);
+    compressor.release.setValueAtTime(0.1, now);
     
-    // Create primary brown noise - deeper for wet character
+    // Create realistic wet gas base with multiple oscillators
+    const baseFreq = 120 + Math.random() * 80; // 120-200 Hz for wet character
+    
+    // Primary wet oscillator - triangle wave for softer attack
+    const wetOsc = audioContext.createOscillator();
+    wetOsc.type = 'triangle';
+    wetOsc.frequency.setValueAtTime(baseFreq, now);
+    wetOsc.frequency.exponentialRampToValueAtTime(baseFreq * 0.6, now + duration); // Pitch drops
+    
+    // Secondary harmonic for wetness character
+    const harmonic = audioContext.createOscillator();
+    harmonic.type = 'sawtooth';
+    harmonic.frequency.setValueAtTime(baseFreq * 0.7, now);
+    harmonic.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, now + duration);
+    
+    // Create wet bubble texture using filtered noise
     const bufferSize = 2 * audioContext.sampleRate;
-    const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
+    const wetNoiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const wetNoiseData = wetNoiseBuffer.getChannelData(0);
     
+    // Generate brown noise for wet gas texture
     let lastOut = 0.0;
     for (let i = 0; i < bufferSize; i++) {
-        // Browner noise formula (more bass content)
         const white = Math.random() * 2 - 1;
-        output[i] = (lastOut + (0.015 * white)) / 1.015; // Browner coefficient
-        lastOut = output[i];
-        output[i] *= 4.0; // More amplification for presence
+        wetNoiseData[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = wetNoiseData[i];
+        wetNoiseData[i] *= 3.5;
     }
     
-    // Noise source for the "wet/airy" component
-    const noise = audioContext.createBufferSource();
-    noise.buffer = noiseBuffer;
+    const wetNoise = audioContext.createBufferSource();
+    wetNoise.buffer = wetNoiseBuffer;
+    wetNoise.loop = true;
     
-    // Create a second noise layer for texture
-    const textureBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const textureOutput = textureBuffer.getChannelData(0);
+    // Wet character filter - bandpass for liquid-like sound
+    const wetFilter = audioContext.createBiquadFilter();
+    wetFilter.type = 'bandpass';
+    wetFilter.frequency.setValueAtTime(300, now);
+    wetFilter.frequency.exponentialRampToValueAtTime(150, now + duration);
+    wetFilter.Q.value = 2.5; // Resonant for wet character
     
-    // Create a mix of pink and white noise for texture
-    for (let i = 0; i < bufferSize; i++) {
-        const white = Math.random() * 2 - 1;
-        // Pink noise has more mid-range energy
-        textureOutput[i] = white * (1 - (i/bufferSize) * 0.15);
+    // Add low-frequency "plop" component
+    const plopOsc = audioContext.createOscillator();
+    plopOsc.type = 'sine';
+    plopOsc.frequency.setValueAtTime(80, now);
+    plopOsc.frequency.exponentialRampToValueAtTime(45, now + duration * 0.6);
+    
+    // Create "splash" modulation for wet character
+    const splashLFO = audioContext.createOscillator();
+    splashLFO.type = 'sine';
+    splashLFO.frequency.value = 8 + Math.random() * 4; // 8-12 Hz modulation
+    
+    const splashGain = audioContext.createGain();
+    splashGain.gain.value = 0.2; // Subtle modulation
+    
+    // Main wet oscillator gain with realistic envelope
+    const wetGain = audioContext.createGain();
+    wetGain.gain.setValueAtTime(0.01, now);
+    wetGain.gain.exponentialRampToValueAtTime(0.6, now + 0.05); // Quick wet attack
+    wetGain.gain.linearRampToValueAtTime(0.4, now + duration * 0.4); // Sustain
+    wetGain.gain.exponentialRampToValueAtTime(0.01, now + duration); // Natural decay
+    
+    // Harmonic gain
+    const harmonicGain = audioContext.createGain();
+    harmonicGain.gain.setValueAtTime(0.01, now);
+    harmonicGain.gain.exponentialRampToValueAtTime(0.3, now + 0.08);
+    harmonicGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    
+    // Plop gain with sharp attack and quick decay
+    const plopGain = audioContext.createGain();
+    plopGain.gain.setValueAtTime(0.01, now);
+    plopGain.gain.exponentialRampToValueAtTime(0.4, now + 0.03);
+    plopGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.7);
+    
+    // Wet noise gain
+    const wetNoiseGain = audioContext.createGain();
+    wetNoiseGain.gain.setValueAtTime(0.01, now);
+    wetNoiseGain.gain.exponentialRampToValueAtTime(0.35, now + 0.04);
+    wetNoiseGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    
+    // Create 2-4 distinct "bubble pops" for wet character
+    const numPops = 2 + Math.floor(Math.random() * 3); // 2-4 pops
+    const popSpacing = duration / (numPops + 1);
+    
+    for (let i = 0; i < numPops; i++) {
+        const popTime = now + (i * popSpacing) + (Math.random() * 0.02);
+        const popDuration = 0.04 + Math.random() * 0.03;
+        
+        // Create bubble pop oscillator
+        const popOsc = audioContext.createOscillator();
+        popOsc.type = 'triangle';
+        const popFreq = 200 + Math.random() * 150; // 200-350 Hz
+        popOsc.frequency.setValueAtTime(popFreq, popTime);
+        popOsc.frequency.exponentialRampToValueAtTime(popFreq * 0.5, popTime + popDuration);
+        
+        // Pop filter for liquid character
+        const popFilter = audioContext.createBiquadFilter();
+        popFilter.type = 'lowpass';
+        popFilter.frequency.value = 600;
+        popFilter.Q.value = 1.5;
+        
+        // Sharp pop envelope
+        const popGainNode = audioContext.createGain();
+        popGainNode.gain.setValueAtTime(0.01, popTime);
+        popGainNode.gain.exponentialRampToValueAtTime(0.3 + Math.random() * 0.2, popTime + 0.01);
+        popGainNode.gain.exponentialRampToValueAtTime(0.01, popTime + popDuration);
+        
+        // Random stereo positioning for realism
+        const popPanner = audioContext.createStereoPanner();
+        popPanner.pan.value = (Math.random() - 0.5) * 0.4;
+        
+        popOsc.connect(popFilter);
+        popFilter.connect(popGainNode);
+        popGainNode.connect(popPanner);
+        popPanner.connect(masterGain);
+        
+        popOsc.start(popTime);
+        popOsc.stop(popTime + popDuration);
     }
     
-    const textureNoise = audioContext.createBufferSource();
-    textureNoise.buffer = textureBuffer;
-    
-    // Primary filter for the base noise - less resonant
-    const noiseFilter = audioContext.createBiquadFilter();
-    noiseFilter.type = 'lowpass';
-    noiseFilter.frequency.setValueAtTime(600, now);
-    noiseFilter.frequency.exponentialRampToValueAtTime(120, now + duration);
-    noiseFilter.Q.setValueAtTime(1.5, now); // Much less resonance to avoid "boing"
-    
-    // Add low shelf boost for wetness
-    const lowShelfFilter = audioContext.createBiquadFilter();
-    lowShelfFilter.type = 'lowshelf';
-    lowShelfFilter.frequency.value = 200;
-    lowShelfFilter.gain.value = 8;
-    
-    // Add a "squelchy" formant filter - avoid high Q values that cause ringing
-    const formantFilter = audioContext.createBiquadFilter();
-    formantFilter.type = 'peaking';
-    formantFilter.frequency.value = 700;
-    formantFilter.Q.value = 2; // Lower Q to avoid resonant "boing"
-    formantFilter.gain.value = 6;
-    
-    // Create wobble LFO for overall movement
-    const wobbleLFO = audioContext.createOscillator();
-    wobbleLFO.type = 'sine';
-    wobbleLFO.frequency.setValueAtTime(3.0 + Math.random() * 2.0, now);
-    
-    // Slower, irregular modulation for more natural movement
-    const modLFO1 = audioContext.createOscillator();
-    modLFO1.type = 'triangle'; // More natural modulation
-    modLFO1.frequency.setValueAtTime(2.5 + Math.random() * 1.5, now); // Much slower
-    
-    const modLFO2 = audioContext.createOscillator();
-    modLFO2.type = 'sine'; 
-    modLFO2.frequency.setValueAtTime(7.2 + Math.random() * 2, now); // Second modulation source
-    
-    const modGain1 = audioContext.createGain();
-    modGain1.gain.setValueAtTime(80, now); // Less extreme modulation depth
-    
-    const modGain2 = audioContext.createGain();
-    modGain2.gain.setValueAtTime(40, now);
-    
-    // Connect modulation sources
-    modLFO1.connect(modGain1);
-    modGain1.connect(formantFilter.frequency);
-    
-    modLFO2.connect(modGain2);
-    modGain2.connect(noiseFilter.frequency);
-    
-    // Configure wobble LFO to add subtle movement to the filter
-    const wobbleGain = audioContext.createGain();
-    wobbleGain.gain.setValueAtTime(60, now);
-    wobbleLFO.connect(wobbleGain);
-    wobbleGain.connect(lowShelfFilter.frequency);
-    
-    // More natural envelope for the noise
-    const noiseGain = audioContext.createGain();
-    noiseGain.gain.setValueAtTime(0.01, now);
-    noiseGain.gain.linearRampToValueAtTime(0.5, now + 0.04); // Fast initial attack
-    
-    // Create intermediate level changes for more realism
-    const segments = 2 + Math.floor(Math.random() * 2); // 2-3 segments
-    const segmentTime = duration / segments;
-    
-    for (let i = 0; i < segments; i++) {
-        const segStart = now + (i * segmentTime);
-        noiseGain.gain.linearRampToValueAtTime(
-            0.4 - (i * 0.1), // Gradually decrease volume
-            segStart + (segmentTime * 0.3)
-        );
-        noiseGain.gain.linearRampToValueAtTime(
-            0.25 - (i * 0.07),
-            segStart + (segmentTime * 0.7)
-        );
+    // Add occasional "squelch" for extra wetness
+    if (Math.random() > 0.5) {
+        const squelchTime = now + duration * 0.3 + Math.random() * (duration * 0.4);
+        const squelchDuration = 0.08 + Math.random() * 0.05;
+        
+        const squelchOsc = audioContext.createOscillator();
+        squelchOsc.type = 'sawtooth';
+        squelchOsc.frequency.setValueAtTime(400, squelchTime);
+        squelchOsc.frequency.exponentialRampToValueAtTime(180, squelchTime + squelchDuration);
+        
+        const squelchFilter = audioContext.createBiquadFilter();
+        squelchFilter.type = 'bandpass';
+        squelchFilter.frequency.value = 350;
+        squelchFilter.Q.value = 3;
+        
+        const squelchGainNode = audioContext.createGain();
+        squelchGainNode.gain.setValueAtTime(0.01, squelchTime);
+        squelchGainNode.gain.exponentialRampToValueAtTime(0.25, squelchTime + 0.02);
+        squelchGainNode.gain.exponentialRampToValueAtTime(0.01, squelchTime + squelchDuration);
+        
+        squelchOsc.connect(squelchFilter);
+        squelchFilter.connect(squelchGainNode);
+        squelchGainNode.connect(masterGain);
+        
+        squelchOsc.start(squelchTime);
+        squelchOsc.stop(squelchTime + squelchDuration);
     }
     
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    // Connect splash modulation
+    splashLFO.connect(splashGain);
+    splashGain.connect(wetGain.gain);
     
-    // Texture noise gain
-    const textureGain = audioContext.createGain();
-    textureGain.gain.setValueAtTime(0.01, now);
-    textureGain.gain.linearRampToValueAtTime(0.2, now + 0.05);
-    textureGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.7);
+    // Connect main components
+    wetOsc.connect(wetGain);
+    wetGain.connect(masterGain);
     
-    // For bubble sounds, use filtered noise instead of oscillators
-    // This creates more realistic "plop" sounds instead of "boing" tones
-    for (let i = 0; i < numBubbles; i++) {
-        const bubbleStart = now + (i * bubbleTime) + (Math.random() * 0.03); // Add jitter
-        const bubbleDuration = 0.06 + (Math.random() * 0.05); // Short bubbles
-        
-        // Create bubble filter (bandpass for targeted "plop" sound)
-        const bubbleFilter = audioContext.createBiquadFilter();
-        bubbleFilter.type = 'bandpass';
-        const baseFreq = 180 + (Math.random() * 120); // Lower frequencies
-        bubbleFilter.frequency.setValueAtTime(baseFreq * 1.5, bubbleStart);
-        bubbleFilter.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, bubbleStart + bubbleDuration);
-        bubbleFilter.Q.setValueAtTime(1 + Math.random() * 1.5, bubbleStart); // Lower resonance
-        
-        // Create resonant "body" for plop sound
-        const plopFilter = audioContext.createBiquadFilter();
-        plopFilter.type = 'lowshelf';
-        plopFilter.frequency.setValueAtTime(baseFreq * 0.7, bubbleStart);
-        plopFilter.gain.setValueAtTime(10, bubbleStart);
-        
-        // Random pan for spatial effect
-        const panner = audioContext.createStereoPanner();
-        panner.pan.setValueAtTime((Math.random() * 0.4) - 0.2, bubbleStart);
-        
-        // Create envelope for bubble (sharp attack, quick decay)
-        const bubbleGain = audioContext.createGain();
-        bubbleGain.gain.setValueAtTime(0.01, bubbleStart);
-        bubbleGain.gain.linearRampToValueAtTime(0.2 + (Math.random() * 0.15), bubbleStart + 0.02);
-        bubbleGain.gain.exponentialRampToValueAtTime(0.01, bubbleStart + bubbleDuration);
-        
-        // Create bubble noise source (clone the main noise for efficiency)
-        const bubbleNoise = audioContext.createBufferSource();
-        bubbleNoise.buffer = noiseBuffer;
-        
-        // Connect bubble path with filters first
-        bubbleNoise.connect(bubbleFilter);
-        bubbleFilter.connect(plopFilter);
-        plopFilter.connect(bubbleGain);
-        bubbleGain.connect(panner);
-        panner.connect(masterGain);
-        
-        // Schedule bubble noise burst
-        bubbleNoise.start(bubbleStart);
-        bubbleNoise.stop(bubbleStart + bubbleDuration);
-    }
+    harmonic.connect(harmonicGain);
+    harmonicGain.connect(masterGain);
     
-    // Add wet "slosh" element halfway through
-    if (Math.random() > 0.4) {
-        const sloshTime = now + (duration * 0.4) + (Math.random() * 0.1);
-        const sloshDuration = 0.15 + (Math.random() * 0.1);
-        
-        // Create slosh filter
-        const sloshFilter = audioContext.createBiquadFilter();
-        sloshFilter.type = 'lowpass';
-        sloshFilter.frequency.setValueAtTime(800, sloshTime);
-        sloshFilter.frequency.exponentialRampToValueAtTime(300, sloshTime + sloshDuration);
-        sloshFilter.Q.value = 1.5; // Lower Q to avoid springiness
-        
-        // Slosh gain envelope
-        const sloshGain = audioContext.createGain();
-        sloshGain.gain.setValueAtTime(0.01, sloshTime);
-        sloshGain.gain.linearRampToValueAtTime(0.3, sloshTime + 0.03);
-        sloshGain.gain.exponentialRampToValueAtTime(0.01, sloshTime + sloshDuration);
-        
-        // Create slosh noise
-        const sloshNoise = audioContext.createBufferSource();
-        sloshNoise.buffer = noiseBuffer;
-        
-        sloshNoise.connect(sloshFilter);
-        sloshFilter.connect(sloshGain);
-        sloshGain.connect(masterGain);
-        
-        sloshNoise.start(sloshTime);
-        sloshNoise.stop(sloshTime + sloshDuration);
-    }
+    plopOsc.connect(plopGain);
+    plopGain.connect(masterGain);
     
-    // Main routing - simpler signal path with less resonance
-    noise.connect(noiseFilter);
-    noiseFilter.connect(lowShelfFilter);
-    lowShelfFilter.connect(formantFilter);
-    formantFilter.connect(noiseGain);
-    noiseGain.connect(masterGain);
+    wetNoise.connect(wetFilter);
+    wetFilter.connect(wetNoiseGain);
+    wetNoiseGain.connect(masterGain);
     
-    // Add texture noise layer
-    textureNoise.connect(textureGain);
-    textureGain.connect(masterGain);
-    
-    // Final output path with compression for "wetness"
     masterGain.connect(compressor);
     compressor.connect(audioContext.destination);
     
-    // Start the continuous components
-    modLFO1.start(now);
-    modLFO1.stop(now + duration);
+    // Start all components
+    wetOsc.start(now);
+    wetOsc.stop(now + duration);
     
-    modLFO2.start(now);
-    modLFO2.stop(now + duration);
+    harmonic.start(now);
+    harmonic.stop(now + duration);
     
-    wobbleLFO.start(now);
-    wobbleLFO.stop(now + duration);
+    plopOsc.start(now);
+    plopOsc.stop(now + duration);
     
-    noise.start(now);
-    noise.stop(now + duration);
+    wetNoise.start(now);
+    wetNoise.stop(now + duration);
     
-    textureNoise.start(now);
-    textureNoise.stop(now + duration);
+    splashLFO.start(now);
+    splashLFO.stop(now + duration);
     
     return duration;
 }
@@ -1457,18 +1494,19 @@ function createRipplingFart(duration, now) {
 // Creates a squeaky high-pitched fart with friction character (not boing-like)
 function createSqueakyFart(duration, now) {
     const masterGain = audioContext.createGain();
-    masterGain.gain.setValueAtTime(0.5, now);
+    masterGain.gain.setValueAtTime(0.6, now);
     masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.1);
     
-    // Add strong compression for that tight, pressurized sound
+    // Moderate compression for punch but not overly tight
     const compressor = audioContext.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-24);
-    compressor.knee.setValueAtTime(4);
-    compressor.ratio.setValueAtTime(12);
-    compressor.attack.setValueAtTime(0.002);
-    compressor.release.setValueAtTime(0.05);
+    compressor.threshold.setValueAtTime(-22, now);
+    compressor.knee.setValueAtTime(8, now);
+    compressor.ratio.setValueAtTime(6, now);
+    compressor.attack.setValueAtTime(0.002, now);
+    compressor.release.setValueAtTime(0.05, now);
     
-    // Create primary brown noise component (all farts need some noise component)
+    // === BASE FART FOUNDATION (BROWN NOISE) ===
+    // All farts need a brown noise base for that gassy character
     const brownBufferSize = 2 * audioContext.sampleRate;
     const brownNoiseBuffer = audioContext.createBuffer(1, brownBufferSize, audioContext.sampleRate);
     const brownOutput = brownNoiseBuffer.getChannelData(0);
@@ -1478,688 +1516,593 @@ function createSqueakyFart(duration, now) {
         const white = Math.random() * 2 - 1;
         brownOutput[i] = (brownLastOut + (0.02 * white)) / 1.02;
         brownLastOut = brownOutput[i];
-        brownOutput[i] *= 3.0;
+        brownOutput[i] *= 2.5; // Moderate amplitude
     }
     
     const brownNoise = audioContext.createBufferSource();
     brownNoise.buffer = brownNoiseBuffer;
     
-    // Bandpass filter to create "friction" character instead of pure tone
-    const frictionFilter = audioContext.createBiquadFilter();
-    frictionFilter.type = 'bandpass';
-    frictionFilter.frequency.value = 2500;
-    frictionFilter.Q.value = 2.5;
+    // Low-pass the brown noise for the basic fart body
+    const fartBodyFilter = audioContext.createBiquadFilter();
+    fartBodyFilter.type = 'lowpass';
+    fartBodyFilter.frequency.setValueAtTime(400, now);
+    fartBodyFilter.frequency.exponentialRampToValueAtTime(200, now + duration);
+    fartBodyFilter.Q.setValueAtTime(0.7, now);
     
-    // Add a subtle formant filter for more "organic" quality
-    const formantFilter = audioContext.createBiquadFilter();
-    formantFilter.type = 'peaking';
-    formantFilter.frequency.value = 1800;
-    formantFilter.Q.value = 5;
-    formantFilter.gain.value = 15;
+    const fartBodyGain = audioContext.createGain();
+    fartBodyGain.gain.setValueAtTime(0.4, now);
+    fartBodyGain.gain.exponentialRampToValueAtTime(0.1, now + duration);
     
-    // For the squeaky component, use filtered noise rather than a pure oscillator
-    // This creates a more airy, friction-based sound like real squeaky farts
+    // === SQUEAKY COMPONENT ON TOP ===
+    // High-pitched component that rides on top of the fart base
+    const squeakOsc = audioContext.createOscillator();
+    squeakOsc.type = 'sawtooth'; // More harmonics for richer squeak
+    
+    // Lower frequency range - still squeaky but more fart-like
+    const baseFreq = 600 + Math.random() * 400; // 600-1000Hz
+    squeakOsc.frequency.setValueAtTime(baseFreq, now);
+    squeakOsc.frequency.exponentialRampToValueAtTime(baseFreq * 0.6, now + duration);
+    
+    // Add vibrato for that wobbly squeaky character
+    const vibratoLFO = audioContext.createOscillator();
+    vibratoLFO.type = 'sine';
+    vibratoLFO.frequency.setValueAtTime(12 + Math.random() * 8, now);
+    
+    const vibratoGain = audioContext.createGain();
+    vibratoGain.gain.setValueAtTime(80 + Math.random() * 60, now);
+    
+    vibratoLFO.connect(vibratoGain);
+    vibratoGain.connect(squeakOsc.frequency);
+    
+    // Bandpass filter to make it more nasal/squeaky
     const squeakFilter = audioContext.createBiquadFilter();
     squeakFilter.type = 'bandpass';
-    squeakFilter.Q.value = 8;
+    squeakFilter.frequency.setValueAtTime(800, now);
+    squeakFilter.frequency.exponentialRampToValueAtTime(500, now + duration);
+    squeakFilter.Q.setValueAtTime(4, now);
     
-    // Make the center frequency move in a more organic pattern
-    // Start higher, move down, then back up slightly (typical squeaky fart pattern)
-    squeakFilter.frequency.setValueAtTime(3000, now);
-    squeakFilter.frequency.exponentialRampToValueAtTime(1800, now + duration * 0.6);
-    squeakFilter.frequency.exponentialRampToValueAtTime(2200, now + duration);
-    
-    // Modulate the frequency with irregular patterns for realism
-    const modLFO = audioContext.createOscillator();
-    modLFO.type = 'sawtooth'; // Creates more organic movement
-    modLFO.frequency.setValueAtTime(15, now);
-    modLFO.frequency.linearRampToValueAtTime(8, now + duration);
-    
-    const modGain = audioContext.createGain();
-    modGain.gain.setValueAtTime(300, now);
-    modGain.gain.linearRampToValueAtTime(100, now + duration);
-    
-    modLFO.connect(modGain);
-    modGain.connect(squeakFilter.frequency);
-    
-    // Create a more complex envelope for the squeak
     const squeakGain = audioContext.createGain();
     squeakGain.gain.setValueAtTime(0.01, now);
-    squeakGain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+    squeakGain.gain.linearRampToValueAtTime(0.3, now + 0.02);
     
-    // Add 2-3 "pulses" to the squeak for a more realistic sound
-    const pulses = 2 + Math.floor(Math.random() * 2);
-    const pulseLength = duration / (pulses + 0.5);
+    // Add some bursts to the squeak for realism
+    const numSqueakBursts = 2 + Math.floor(Math.random() * 2);
+    const squeakBurstInterval = duration / (numSqueakBursts + 1);
     
-    for (let i = 0; i < pulses; i++) {
-        const pulseTime = now + (i * pulseLength);
-        squeakGain.gain.linearRampToValueAtTime(0.3, pulseTime);
-        squeakGain.gain.exponentialRampToValueAtTime(0.1, pulseTime + (pulseLength * 0.7));
+    for (let i = 0; i < numSqueakBursts; i++) {
+        const burstTime = now + (i + 0.5) * squeakBurstInterval;
+        squeakGain.gain.linearRampToValueAtTime(0.4 + Math.random() * 0.2, burstTime);
+        squeakGain.gain.exponentialRampToValueAtTime(0.15, burstTime + 0.05);
     }
     
     squeakGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
-    // Add low-end air movement noise for body
+    // === MID-RANGE RESONANCE ===
+    // Add some mid-frequency resonance typical of gas passing through tight spaces
+    const resonanceOsc = audioContext.createOscillator();
+    resonanceOsc.type = 'triangle';
+    resonanceOsc.frequency.setValueAtTime(220, now);
+    resonanceOsc.frequency.exponentialRampToValueAtTime(160, now + duration);
+    
+    const resonanceFilter = audioContext.createBiquadFilter();
+    resonanceFilter.type = 'peaking';
+    resonanceFilter.frequency.setValueAtTime(300, now);
+    resonanceFilter.Q.setValueAtTime(3, now);
+    resonanceFilter.gain.setValueAtTime(8, now);
+    
+    const resonanceGain = audioContext.createGain();
+    resonanceGain.gain.setValueAtTime(0.15, now);
+    resonanceGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    
+    // === HIGH-FREQUENCY AIR HISS ===
+    // Filtered noise for the "air escaping" component
+    const airNoise = audioContext.createBufferSource();
+    airNoise.buffer = brownNoiseBuffer; // Reuse the brown noise buffer
+    
     const airFilter = audioContext.createBiquadFilter();
-    airFilter.type = 'lowpass';
-    airFilter.frequency.value = 300;
+    airFilter.type = 'highpass';
+    airFilter.frequency.setValueAtTime(1500, now);
+    airFilter.Q.setValueAtTime(0.5, now);
     
     const airGain = audioContext.createGain();
-    airGain.gain.setValueAtTime(0.05, now);
-    airGain.gain.linearRampToValueAtTime(0.15, now + 0.1);
-    masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.2);
+    airGain.gain.setValueAtTime(0.1, now);
+    airGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
-    // More moderate compression for that "splat" character
-    const splatCompressor = audioContext.createDynamicsCompressor();
-    splatCompressor.threshold.setValueAtTime(-18, now);
-    splatCompressor.knee.setValueAtTime(8, now); // Gentler knee for smoother sound
-    splatCompressor.ratio.setValueAtTime(12, now); // Reduced from 20 to 12
-    splatCompressor.attack.setValueAtTime(0.002, now); // Slightly slower attack for less punch
-    splatCompressor.release.setValueAtTime(0.12, now);
+    // === LOW-END RUMBLE (REDUCED) ===
+    // Keep some low-end but much less than other fart types
+    const lowRumble = audioContext.createOscillator();
+    lowRumble.type = 'sine';
+    lowRumble.frequency.setValueAtTime(60, now);
+    lowRumble.frequency.exponentialRampToValueAtTime(40, now + duration);
     
-    // Mix of noise types for a more organic explosion
-    const burstBufferSize = 2 * audioContext.sampleRate;
-    
-    // Create brown noise for the initial "burst" character
-    const burstNoiseBuffer = audioContext.createBuffer(1, burstBufferSize, audioContext.sampleRate);
-    const burstOutput = burstNoiseBuffer.getChannelData(0);
-    
-    let burstLastOut = 0.0;
-    for (let i = 0; i < burstBufferSize; i++) {
-        // Brown noise with extra low-end emphasis
-        const white = Math.random() * 2 - 1;
-        burstOutput[i] = (burstLastOut + (0.015 * white)) / 1.015;
-        burstLastOut = burstOutput[i];
-        burstOutput[i] *= 2.5; // Reduced from 5.0 to 2.5 for less harshness
-    }
-    
-    // Create noise burst with a sharp attack
-    const burstNoise = audioContext.createBufferSource();
-    burstNoise.buffer = burstNoiseBuffer;
-    
-    // Moderate "splat" filter with less boost
-    const splatFilter = audioContext.createBiquadFilter();
-    splatFilter.type = 'lowshelf';
-    splatFilter.frequency.value = 150;
-    splatFilter.gain.value = 12; // Reduced from 20 to 12 for less extreme bass
-    
-    // Add some mid-range presence for the "wet" character
-    const wetFilter = audioContext.createBiquadFilter();
-    wetFilter.type = 'peaking';
-    wetFilter.frequency.value = 800;
-    wetFilter.Q.value = 1.5; // Reduced for less resonance
-    wetFilter.gain.value = 6; // Reduced from 8 to 6
-    
-    // More moderate envelope for the initial explosion
-    const explosionGain = audioContext.createGain();
-    explosionGain.gain.setValueAtTime(0.01, now);
-    explosionGain.gain.linearRampToValueAtTime(0.65, now + 0.015); // Reduced peak from 1.0 to 0.65
-    explosionGain.gain.exponentialRampToValueAtTime(0.3, now + 0.06); // Reduced from 0.4 to 0.3
-    explosionGain.gain.exponentialRampToValueAtTime(0.15, now + 0.12); // Reduced from 0.2 to 0.15
-    explosionGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-    
-    // Add some "spray" noise for that messy character (toned down)
-    const sprayNoiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const sprayOutput = sprayNoiseBuffer.getChannelData(0);
-    
-    for (let i = 0; i < bufferSize; i++) {
-        // Add slight pink noise characteristic to reduce harshness
-        sprayOutput[i] = (Math.random() * 2 - 1) * (1 - (i/bufferSize) * 0.2);
-    }
-    
-    const sprayNoise = audioContext.createBufferSource();
-    sprayNoise.buffer = sprayNoiseBuffer;
-    
-    // Add a bandpass instead of highpass for less harsh noise
-    const sprayFilter = audioContext.createBiquadFilter();
-    sprayFilter.type = 'bandpass';
-    sprayFilter.frequency.value = 2000; // Lower from 3000 to 2000
-    sprayFilter.Q.value = 0.7; // Slightly higher Q for more focused sound
-    
-    const sprayGain = audioContext.createGain();
-    sprayGain.gain.setValueAtTime(0.01, now);
-    sprayGain.gain.linearRampToValueAtTime(0.1, now + 0.02); // Reduced from 0.2 to 0.1
-    sprayGain.gain.exponentialRampToValueAtTime(0.03, now + 0.1); // Reduced from 0.05 to 0.03
-    sprayGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.4); // Shorter duration
-    
-    // Add bubbling aftermath with random bubble pops
-    const numBubbles = 3 + Math.floor(Math.random() * 4); // 3-6 bubbles
-    
-    for (let i = 0; i < numBubbles; i++) {
-        // Start bubbles after the initial explosion
-        const bubbleStart = now + 0.05 + (Math.random() * duration * 0.6);
-        const bubbleDuration = 0.05 + (Math.random() * 0.05);
-        
-        // Each bubble has a random frequency
-        const bubble = audioContext.createOscillator();
-        bubble.type = 'sine';
-        const baseFreq = 80 + (Math.random() * 120);
-        
-        // Quick pitch drop for bubble pop effect
-        bubble.frequency.setValueAtTime(baseFreq, bubbleStart);
-        bubble.frequency.exponentialRampToValueAtTime(baseFreq * 0.6, bubbleStart + bubbleDuration);
-        
-        // Add envelope for bubble
-        const bubbleGain = audioContext.createGain();
-        bubbleGain.gain.setValueAtTime(0.01, bubbleStart);
-        bubbleGain.gain.linearRampToValueAtTime(0.1 + (Math.random() * 0.2), bubbleStart + 0.01);
-        bubbleGain.gain.exponentialRampToValueAtTime(0.01, bubbleStart + bubbleDuration);
-        
-        // Connect bubble
-        bubble.connect(bubbleGain);
-        bubbleGain.connect(masterGain);
-        
-        // Schedule bubble
-        bubble.start(bubbleStart);
-        bubble.stop(bubbleStart + bubbleDuration);
-    }
-    
-    // Low frequency rumbling aftermath - deeper and more powerful
-    const rumble = audioContext.createOscillator();
-    rumble.type = 'sawtooth'; // More harmonics for a richer rumble
-    rumble.frequency.setValueAtTime(40, now + 0.03); // Lower frequency for deeper rumble
-    rumble.frequency.exponentialRampToValueAtTime(25, now + duration);
-    
-    // Lowpass filter the oscillator for smoother rumble
-    const rumbleFilter = audioContext.createBiquadFilter();
-    rumbleFilter.type = 'lowpass';
-    rumbleFilter.frequency.value = 120;
-    rumbleFilter.Q.value = 1;
-    
-    // Dynamic envelope for the rumble
     const rumbleGain = audioContext.createGain();
-    rumbleGain.gain.setValueAtTime(0.01, now + 0.03);
-    rumbleGain.gain.linearRampToValueAtTime(0.5, now + 0.08); // Stronger rumble
+    rumbleGain.gain.setValueAtTime(0.1, now);
     rumbleGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
-    // Connect audio paths
-    burstNoise.connect(splatFilter);
-    splatFilter.connect(wetFilter);
-    wetFilter.connect(explosionGain);
-    explosionGain.connect(masterGain);
+    // === CONNECTIONS ===
+    // Brown noise fart body
+    brownNoise.connect(fartBodyFilter);
+    fartBodyFilter.connect(fartBodyGain);
+    fartBodyGain.connect(masterGain);
     
-    sprayNoise.connect(sprayFilter);
-    sprayFilter.connect(sprayGain);
-    sprayGain.connect(masterGain);
+    // Squeaky component
+    squeakOsc.connect(squeakFilter);
+    squeakFilter.connect(squeakGain);
+    squeakGain.connect(masterGain);
     
-    rumble.connect(rumbleFilter);
-    rumbleFilter.connect(rumbleGain);
+    // Mid-range resonance
+    resonanceOsc.connect(resonanceFilter);
+    resonanceFilter.connect(resonanceGain);
+    resonanceGain.connect(masterGain);
+    
+    // Air hiss
+    airNoise.connect(airFilter);
+    airFilter.connect(airGain);
+    airGain.connect(masterGain);
+    
+    // Low rumble
+    lowRumble.connect(rumbleGain);
     rumbleGain.connect(masterGain);
     
-    // Connect to the initial compressor, not the splatCompressor
+    // Final output
     masterGain.connect(compressor);
     compressor.connect(audioContext.destination);
     
-    // Start components
-    burstNoise.start(now);
-    burstNoise.stop(now + duration);
-    sprayNoise.start(now);
-    sprayNoise.stop(now + duration);
-    rumble.start(now + 0.03);
-    rumble.stop(now + duration);
+    // === START ALL COMPONENTS ===
+    brownNoise.start(now);
+    brownNoise.stop(now + duration);
+    
+    squeakOsc.start(now);
+    squeakOsc.stop(now + duration);
+    
+    vibratoLFO.start(now);
+    vibratoLFO.stop(now + duration);
+    
+    resonanceOsc.start(now);
+    resonanceOsc.stop(now + duration);
+    
+    airNoise.start(now);
+    airNoise.stop(now + duration);
+    
+    lowRumble.start(now);
+    lowRumble.stop(now + duration);
 }
 
-// Creates a deep rumbling fart - the classic "tuba" fart (toned down version)
-function createRumblingFart(duration, now) {
+// Creates an explosive fart - sharp attack, loud, quick decay
+function createExplosiveFart(duration, now) {
     const masterGain = audioContext.createGain();
-    masterGain.gain.setValueAtTime(0.55, now); // Reduced from 0.8 to 0.55
-    masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.3);
+    masterGain.gain.setValueAtTime(0.75, now);
+    masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.1);
     
-    // Add compression for rich tone with gentler settings
+    // Moderate compression for punch without over-processing
     const compressor = audioContext.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-22, now); // Slightly lower threshold for smoother compression
-    compressor.knee.setValueAtTime(8, now); // Wider knee for more gradual compression
-    compressor.ratio.setValueAtTime(8, now); // Lower ratio for less aggressive compression
-    compressor.attack.setValueAtTime(0.008, now); // Slightly slower attack
-    compressor.release.setValueAtTime(0.15, now); // Slightly longer release
+    compressor.threshold.setValueAtTime(-18, now);
+    compressor.knee.setValueAtTime(8, now);
+    compressor.ratio.setValueAtTime(8, now);
+    compressor.attack.setValueAtTime(0.002, now);
+    compressor.release.setValueAtTime(0.06, now);
     
-    // Create ultra-deep brown noise (lowest frequency content)
+    // Create realistic explosive gas burst - lower frequency for realism
+    const burstFreq = 100 + Math.random() * 80; // 100-180 Hz (more realistic range)
+    
+    // Primary gas burst oscillator - triangle for more natural attack
+    const burstOsc = audioContext.createOscillator();
+    burstOsc.type = 'triangle';
+    burstOsc.frequency.setValueAtTime(burstFreq, now);
+    burstOsc.frequency.exponentialRampToValueAtTime(burstFreq * 0.4, now + duration); // Dramatic pitch drop
+    
+    // Secondary harmonic for richness
+    const harmonic = audioContext.createOscillator();
+    harmonic.type = 'sawtooth';
+    harmonic.frequency.setValueAtTime(burstFreq * 0.7, now);
+    harmonic.frequency.exponentialRampToValueAtTime(burstFreq * 0.3, now + duration);
+    
+    // Deep sub-bass for the explosive "thump"
+    const subBass = audioContext.createOscillator();
+    subBass.type = 'sine';
+    subBass.frequency.setValueAtTime(45, now);
+    subBass.frequency.exponentialRampToValueAtTime(25, now + duration);
+    
+    // Create realistic gas texture with brown noise
     const bufferSize = 2 * audioContext.sampleRate;
-    const deepNoiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const deepOutput = deepNoiseBuffer.getChannelData(0);
+    const gasNoiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+    const gasNoiseData = gasNoiseBuffer.getChannelData(0);
     
+    // Generate brown noise for natural gas sound
     let lastOut = 0.0;
     for (let i = 0; i < bufferSize; i++) {
-        // Even lower coefficient for the deepest possible rumble
         const white = Math.random() * 2 - 1;
-        deepOutput[i] = (lastOut + (0.008 * white)) / 1.008; // Ultra-deep brown noise
-        lastOut = deepOutput[i];
-        deepOutput[i] *= 3.0; // Reduced from 7.0 to 3.0 - much less amplification
+        gasNoiseData[i] = (lastOut + (0.03 * white)) / 1.03;
+        lastOut = gasNoiseData[i];
+        gasNoiseData[i] *= 3.5;
     }
     
-    const deepNoise = audioContext.createBufferSource();
-    deepNoise.buffer = deepNoiseBuffer;
+    const gasNoise = audioContext.createBufferSource();
+    gasNoise.buffer = gasNoiseBuffer;
     
-    // Create additional noise layer for realistic texture
-    const textureNoiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const textureOutput = textureNoiseBuffer.getChannelData(0);
+    // Create initial "pop" burst
+    const popOsc = audioContext.createOscillator();
+    popOsc.type = 'sine';
+    popOsc.frequency.setValueAtTime(200, now);
+    popOsc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
     
-    lastOut = 0.0;
-    for (let i = 0; i < bufferSize; i++) {
-        // Mix of brown and pink noise for natural sound
-        const white = Math.random() * 2 - 1;
-        // Brown noise component
-        const brown = (lastOut + (0.02 * white)) / 1.02;
-        lastOut = brown;
-        // Mix with some pink noise - use softer mix and less white noise
-        textureOutput[i] = (brown * 0.85) + (white * 0.15 * (1 - (i/bufferSize) * 0.3));
-        textureOutput[i] *= 1.8; // Reduced from 3.0 to 1.8
-    }
+    // Gas release filter - bandpass for realistic gas character
+    const gasFilter = audioContext.createBiquadFilter();
+    gasFilter.type = 'bandpass';
+    gasFilter.frequency.setValueAtTime(300, now);
+    gasFilter.frequency.exponentialRampToValueAtTime(120, now + duration);
+    gasFilter.Q.value = 2.5; // Resonant for gas-like quality
     
-    const textureNoise = audioContext.createBufferSource();
-    textureNoise.buffer = textureNoiseBuffer;
+    // Add wet/bubble character filter
+    const bubbleFilter = audioContext.createBiquadFilter();
+    bubbleFilter.type = 'lowpass';
+    bubbleFilter.frequency.setValueAtTime(600, now);
+    bubbleFilter.frequency.exponentialRampToValueAtTime(200, now + duration);
+    bubbleFilter.Q.value = 1.8;
     
-    // Very low frequency filter for the base rumble - extremely low cutoff
-    const subRumbleFilter = audioContext.createBiquadFilter();
-    subRumbleFilter.type = 'lowpass';
-    subRumbleFilter.frequency.setValueAtTime(80, now); // Even lower cutoff
-    subRumbleFilter.frequency.exponentialRampToValueAtTime(40, now + duration);
-    subRumbleFilter.Q.value = 0.7; // Less resonance for more natural sound
+    // Explosive attack envelope - ultra-sharp for burst effect
+    const burstGain = audioContext.createGain();
+    burstGain.gain.setValueAtTime(0.01, now);
+    burstGain.gain.exponentialRampToValueAtTime(0.8, now + 0.01); // Instant attack
+    burstGain.gain.exponentialRampToValueAtTime(0.3, now + 0.05); // Quick initial decay
+    burstGain.gain.exponentialRampToValueAtTime(0.01, now + duration); // Gradual fade
     
-    // Add moderate low shelf for sub-bass emphasis (reduced)
-    const subBassFilter = audioContext.createBiquadFilter();
-    subBassFilter.type = 'lowshelf';
-    subBassFilter.frequency.value = 100;
-    subBassFilter.gain.value = 8; // Reduced from 15 to 8
+    // Harmonic gain
+    const harmonicGain = audioContext.createGain();
+    harmonicGain.gain.setValueAtTime(0.01, now);
+    harmonicGain.gain.exponentialRampToValueAtTime(0.4, now + 0.02);
+    harmonicGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.7);
     
-    // Add warm mid frequencies for "body" (reduced)
-    const bodyFilter = audioContext.createBiquadFilter();
-    bodyFilter.type = 'peaking';
-    bodyFilter.frequency.value = 250;
-    bodyFilter.Q.value = 1; // Reduced from 2 to 1
-    bodyFilter.gain.value = 4; // Reduced from 6 to 4
-    
-    // Create slow, organic modulation for the rumble
-    const rumbleLFO1 = audioContext.createOscillator();
-    rumbleLFO1.type = 'sine';
-    rumbleLFO1.frequency.value = 2.5; // Very slow modulation
-    
-    const rumbleLFO2 = audioContext.createOscillator();
-    rumbleLFO2.type = 'sine';
-    rumbleLFO2.frequency.value = 5.8; // Slightly faster secondary modulation
-    
-    const rumbleLFOGain1 = audioContext.createGain();
-    rumbleLFOGain1.gain.value = 25; // Moderate modulation depth
-    
-    const rumbleLFOGain2 = audioContext.createGain();
-    rumbleLFOGain2.gain.value = 15; // Less depth for secondary modulation
-    
-    // Connect LFOs to filter frequency for organic movement
-    rumbleLFO1.connect(rumbleLFOGain1);
-    rumbleLFOGain1.connect(subRumbleFilter.frequency);
-    
-    rumbleLFO2.connect(rumbleLFOGain2);
-    rumbleLFOGain2.connect(subRumbleFilter.frequency);
-    
-    // Gain envelope for primary rumble - more organic variations with reduced intensity
-    const rumbleGain = audioContext.createGain();
-    rumbleGain.gain.setValueAtTime(0.01, now);
-    rumbleGain.gain.linearRampToValueAtTime(0.5, now + 0.18); // Reduced peak from 0.8 to 0.5 with slower attack
-    
-    // Create realistic pulsing effect in the rumble - fewer, slower, gentler pulses
-    const pulses = 2 + Math.floor(Math.random() * 2); // 2-3 pulses (reduced)
-    const pulseInterval = duration / pulses;
-    
-    for (let i = 0; i < pulses; i++) {
-        // Make pulses more organic with varied timing
-        const pulseTime = now + (i * pulseInterval) + (Math.random() * 0.05); 
-        const pulseIntensity = 0.45 + Math.random() * 0.15; // Reduced intensity to 0.45-0.6 range
-        const valleyIntensity = 0.25 + Math.random() * 0.1; // Reduced valley to 0.25-0.35 range
-        
-        rumbleGain.gain.linearRampToValueAtTime(pulseIntensity, pulseTime);
-        rumbleGain.gain.linearRampToValueAtTime(valleyIntensity, pulseTime + pulseInterval * 0.6);
-    }
-    
-    rumbleGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-    
-    // Add deep sub-bass oscillator for fundamental frequency
-    const subBassOsc = audioContext.createOscillator();
-    subBassOsc.type = 'sine'; // Pure sine for clean sub-bass
-    subBassOsc.frequency.setValueAtTime(35, now); // Ultra-low frequency
-    subBassOsc.frequency.linearRampToValueAtTime(30, now + duration); // Not quite as low
-    
-    // Sub-bass with gentler dynamics
+    // Sub-bass gain - strong initial thump
     const subBassGain = audioContext.createGain();
     subBassGain.gain.setValueAtTime(0.01, now);
-    subBassGain.gain.linearRampToValueAtTime(0.2, now + 0.25); // Reduced from 0.35 to 0.2
+    subBassGain.gain.exponentialRampToValueAtTime(0.7, now + 0.015);
+    subBassGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.6);
     
-    // Match sub-bass pulses to main rumble with reduced intensity
-    for (let i = 0; i < pulses; i++) {
-        const pulseTime = now + (i * pulseInterval) + (Math.random() * 0.05);
-        subBassGain.gain.linearRampToValueAtTime(0.2, pulseTime); // Reduced from 0.35 to 0.2
-        subBassGain.gain.linearRampToValueAtTime(0.1, pulseTime + pulseInterval * 0.6); // Reduced from 0.2 to 0.1
+    // Gas noise gain
+    const gasNoiseGain = audioContext.createGain();
+    gasNoiseGain.gain.setValueAtTime(0.01, now);
+    gasNoiseGain.gain.exponentialRampToValueAtTime(0.5, now + 0.008);
+    gasNoiseGain.gain.exponentialRampToValueAtTime(0.01, now + duration * 0.6);
+    
+    // Initial pop gain - very sharp burst
+    const popGain = audioContext.createGain();
+    popGain.gain.setValueAtTime(0.01, now);
+    popGain.gain.exponentialRampToValueAtTime(0.6, now + 0.005);
+    popGain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+    
+    // Add 1-2 secondary "aftershocks" for realism
+    const numAfterShocks = 1 + Math.floor(Math.random() * 2);
+    for (let i = 0; i < numAfterShocks; i++) {
+        const shockTime = now + 0.1 + (i * 0.15) + (Math.random() * 0.05);
+        const shockDuration = 0.06 + Math.random() * 0.04;
+        
+        const shockOsc = audioContext.createOscillator();
+        shockOsc.type = 'triangle';
+        const shockFreq = 120 + Math.random() * 60;
+        shockOsc.frequency.setValueAtTime(shockFreq, shockTime);
+        shockOsc.frequency.exponentialRampToValueAtTime(shockFreq * 0.5, shockTime + shockDuration);
+        
+        const shockGainNode = audioContext.createGain();
+        shockGainNode.gain.setValueAtTime(0.01, shockTime);
+        shockGainNode.gain.exponentialRampToValueAtTime(0.3, shockTime + 0.01);
+        shockGainNode.gain.exponentialRampToValueAtTime(0.01, shockTime + shockDuration);
+        
+        shockOsc.connect(shockGainNode);
+        shockGainNode.connect(masterGain);
+        
+        shockOsc.start(shockTime);
+        shockOsc.stop(shockTime + shockDuration);
     }
     
-    subBassGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+    // Connect all components
+    burstOsc.connect(burstGain);
+    burstGain.connect(masterGain);
     
-    // Add occasional "gurgle" elements for character
-    const numGurgles = 1 + Math.floor(Math.random() * 2); // 1-2 gurgles 
-    for (let i = 0; i < numGurgles; i++) {
-        const gurgleTime = now + 0.2 + (Math.random() * (duration - 0.3));
-        const gurgleDuration = 0.1 + (Math.random() * 0.15);
-        
-        // Create bubbling effect
-        const gurgle = audioContext.createOscillator();
-        gurgle.type = 'triangle';
-        gurgle.frequency.setValueAtTime(180 + Math.random() * 80, gurgleTime);
-        gurgle.frequency.exponentialRampToValueAtTime(100, gurgleTime + gurgleDuration);
-        
-        const gurgleFilter = audioContext.createBiquadFilter();
-        gurgleFilter.type = 'lowpass';
-        gurgleFilter.frequency.value = 400;
-        gurgleFilter.Q.value = 1;
-        
-        const gurgleGain = audioContext.createGain();
-        gurgleGain.gain.setValueAtTime(0.01, gurgleTime);
-        gurgleGain.gain.linearRampToValueAtTime(0.15, gurgleTime + 0.03);
-        gurgleGain.gain.exponentialRampToValueAtTime(0.01, gurgleTime + gurgleDuration);
-        
-        gurgle.connect(gurgleFilter);
-        gurgleFilter.connect(gurgleGain);
-        gurgleGain.connect(masterGain);
-        
-        gurgle.start(gurgleTime);
-        gurgle.stop(gurgleTime + gurgleDuration);
-    }
+    harmonic.connect(harmonicGain);
+    harmonicGain.connect(masterGain);
     
-    // Connect audio pathways
-    deepNoise.connect(subRumbleFilter);
-    subRumbleFilter.connect(subBassFilter);
-    subBassFilter.connect(bodyFilter);
-    bodyFilter.connect(rumbleGain);
-    rumbleGain.connect(masterGain);
-    
-    textureNoise.connect(bodyFilter);
-    
-    subBassOsc.connect(subBassGain);
+    subBass.connect(subBassGain);
     subBassGain.connect(masterGain);
     
+    popOsc.connect(popGain);
+    popGain.connect(masterGain);
+    
+    gasNoise.connect(gasFilter);
+    gasFilter.connect(bubbleFilter);
+    bubbleFilter.connect(gasNoiseGain);
+    gasNoiseGain.connect(masterGain);
+    
     masterGain.connect(compressor);
     compressor.connect(audioContext.destination);
     
-    // Start components
-    deepNoise.start(now);
-    deepNoise.stop(now + duration);
+    // Start all components
+    burstOsc.start(now);
+    burstOsc.stop(now + duration);
     
-    textureNoise.start(now);
-    textureNoise.stop(now + duration);
+    harmonic.start(now);
+    harmonic.stop(now + duration * 0.7);
     
-    rumbleLFO1.start(now);
-    rumbleLFO1.stop(now + duration);
+    subBass.start(now);
+    subBass.stop(now + duration * 0.6);
     
-    rumbleLFO2.start(now);
-    rumbleLFO2.stop(now + duration);
+    popOsc.start(now);
+    popOsc.stop(now + 0.08);
     
-    subBassOsc.start(now);
-    subBassOsc.stop(now + duration);
+    gasNoise.start(now);
+    gasNoise.stop(now + duration * 0.6);
 }
 
-// The original fart sound implementation as a fallback
-function createDefaultFart(duration, now) {
-    // Create multiple fart bubble components
-    const numBubbles = 3 + Math.floor(Math.random() * 3); // 3-5 bubbles
-    const bubbleTime = duration / (numBubbles + 1);
-    
-    // Create master gain
+// Creates a deep rumbling fart - the classic low-frequency rumble
+function createRumblingFart(duration, now) {
     const masterGain = audioContext.createGain();
-    masterGain.gain.setValueAtTime(0.7, now);
+    masterGain.gain.setValueAtTime(0.6, now);
     masterGain.gain.exponentialRampToValueAtTime(0.01, now + duration + 0.2);
     
-    // Create compressor for that "squished" sound
+    // Gentle compression for natural dynamics
     const compressor = audioContext.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-24, now);
-    compressor.knee.setValueAtTime(30, now);
-    compressor.ratio.setValueAtTime(12, now);
-    compressor.attack.setValueAtTime(0.003, now);
-    compressor.release.setValueAtTime(0.25, now);
+    compressor.threshold.setValueAtTime(-18, now);
+    compressor.knee.setValueAtTime(6, now);
+    compressor.ratio.setValueAtTime(6, now);
+    compressor.attack.setValueAtTime(0.01, now);
+    compressor.release.setValueAtTime(0.12, now);
     
-    // Create multiple lowpass filters for the "whoosh" component
-    const lowpassFilters = [];
+    // Create realistic deep rumble base with multiple low frequency oscillators
+    const baseFreq = 40 + Math.random() * 20; // 40-60 Hz base frequency
     
-    // Create brown noise (deeper than white noise)
+    // Primary rumble oscillator - the main "engine" of the fart
+    const rumbleOsc = audioContext.createOscillator();
+    rumbleOsc.type = 'sawtooth'; // Sawtooth for rich harmonics
+    rumbleOsc.frequency.setValueAtTime(baseFreq, now);
+    rumbleOsc.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, now + duration); // Pitch drops as gas escapes
+    
+    // Secondary harmonic for richness
+    const harmonic2 = audioContext.createOscillator();
+    harmonic2.type = 'triangle';
+    harmonic2.frequency.setValueAtTime(baseFreq * 1.5, now);
+    harmonic2.frequency.exponentialRampToValueAtTime(baseFreq * 1.2, now + duration);
+    
+    // Sub-bass component for that chest-thumping feeling
+    const subBass = audioContext.createOscillator();
+    subBass.type = 'sine';
+    subBass.frequency.setValueAtTime(25, now); // Very low sub-bass
+    subBass.frequency.linearRampToValueAtTime(20, now + duration);
+    
+    // Create realistic gas bubble texture using filtered noise
     const bufferSize = 2 * audioContext.sampleRate;
     const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
+    const noiseData = noiseBuffer.getChannelData(0);
     
+    // Generate brown noise for natural gas sound
     let lastOut = 0.0;
     for (let i = 0; i < bufferSize; i++) {
-        // Brown noise formula
         const white = Math.random() * 2 - 1;
-        output[i] = (lastOut + (0.02 * white)) / 1.02;
-        lastOut = output[i];
-        output[i] *= 3.5; // Amplify it
+        noiseData[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = noiseData[i];
+        noiseData[i] *= 2.5;
     }
     
-    // Noise source for the "airy/wet" component
-    const noise = audioContext.createBufferSource();
-    noise.buffer = noiseBuffer;
+    const noiseSource = audioContext.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+    noiseSource.loop = true;
     
-    // Primary filter for the noise (basic tone shaping)
-    const noiseFilter = audioContext.createBiquadFilter();
-    noiseFilter.type = 'lowpass';
-    noiseFilter.frequency.setValueAtTime(800, now);
-    noiseFilter.frequency.exponentialRampToValueAtTime(80, now + duration);
-    noiseFilter.Q.setValueAtTime(5, now);
+    // Filter noise to sound like gas bubbles
+    const bubbleFilter = audioContext.createBiquadFilter();
+    bubbleFilter.type = 'bandpass';
+    bubbleFilter.frequency.setValueAtTime(120, now);
+    bubbleFilter.frequency.exponentialRampToValueAtTime(80, now + duration);
+    bubbleFilter.Q.value = 3; // Resonant for bubbly character
     
-    // Create resonant filters for "wet" character
-    const resonantFilter1 = audioContext.createBiquadFilter();
-    resonantFilter1.type = 'peaking';
-    resonantFilter1.frequency.setValueAtTime(250, now);
-    resonantFilter1.Q.setValueAtTime(10, now);
-    resonantFilter1.gain.setValueAtTime(15, now);
+    // Create slow tremolo for natural variation
+    const tremoloLFO = audioContext.createOscillator();
+    tremoloLFO.type = 'sine';
+    tremoloLFO.frequency.value = 3.5 + Math.random() * 2; // 3.5-5.5 Hz variation
     
-    const resonantFilter2 = audioContext.createBiquadFilter();
-    resonantFilter2.type = 'peaking';
-    resonantFilter2.frequency.setValueAtTime(400, now);
-    resonantFilter2.Q.setValueAtTime(8, now);
-    resonantFilter2.gain.setValueAtTime(10, now);
+    const tremoloGain = audioContext.createGain();
+    tremoloGain.gain.value = 0.15; // Subtle tremolo depth
     
-    // Wobble filter for the "bubbling" effect
-    const wobbleFilter = audioContext.createBiquadFilter();
-    wobbleFilter.type = 'peaking';
-    wobbleFilter.Q.setValueAtTime(20, now);
-    wobbleFilter.gain.setValueAtTime(15, now);
+    // Main rumble gain with realistic envelope
+    const rumbleGain = audioContext.createGain();
+    rumbleGain.gain.setValueAtTime(0.01, now);
+    rumbleGain.gain.exponentialRampToValueAtTime(0.7, now + 0.1); // Quick attack
+    rumbleGain.gain.linearRampToValueAtTime(0.6, now + duration * 0.3); // Sustain
+    rumbleGain.gain.exponentialRampToValueAtTime(0.01, now + duration); // Natural decay
     
-    // Wobble LFO
-    const wobbleLFO = audioContext.createOscillator();
-    wobbleLFO.type = 'sine';
-    wobbleLFO.frequency.setValueAtTime(5 + Math.random() * 3, now);
+    // Secondary harmonic gain
+    const harmonic2Gain = audioContext.createGain();
+    harmonic2Gain.gain.setValueAtTime(0.01, now);
+    harmonic2Gain.gain.exponentialRampToValueAtTime(0.3, now + 0.15);
+    harmonic2Gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
-    const wobbleGain = audioContext.createGain();
-    wobbleGain.gain.setValueAtTime(250, now);
+    // Sub-bass gain
+    const subBassGain = audioContext.createGain();
+    subBassGain.gain.setValueAtTime(0.01, now);
+    subBassGain.gain.exponentialRampToValueAtTime(0.4, now + 0.2);
+    subBassGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
-    // Connect wobble modulation
-    wobbleLFO.connect(wobbleGain);
-    wobbleGain.connect(wobbleFilter.frequency);
-    wobbleFilter.frequency.setValueAtTime(300, now);
-    
-    // Gain node for the noise
+    // Noise texture gain
     const noiseGain = audioContext.createGain();
     noiseGain.gain.setValueAtTime(0.01, now);
-    noiseGain.gain.linearRampToValueAtTime(0.6, now + 0.05);
-    noiseGain.gain.exponentialRampToValueAtTime(0.2, now + duration * 0.6);
+    noiseGain.gain.exponentialRampToValueAtTime(0.25, now + 0.1);
     noiseGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
-    // For each bubble in the fart, create a quick frequency ramp
-    for (let i = 0; i < numBubbles; i++) {
-        const bubbleStart = now + (i * bubbleTime);
-        const bubbleDuration = bubbleTime * 0.6;
+    // Create rumbling variations with random modulation
+    const numVariations = 2 + Math.floor(Math.random() * 3); // 2-4 rumble variations
+    for (let i = 0; i < numVariations; i++) {
+        const variationTime = now + 0.2 + (i * (duration - 0.4) / numVariations);
+        const intensityVariation = 0.8 + Math.random() * 0.4; // 0.8-1.2 intensity
         
-        // Create bubble oscillator (tight, short burst)
-        const bubble = audioContext.createOscillator();
-        bubble.type = 'sine';
-        
-        // Each bubble has a random frequency
-        const baseFreq = 100 + (Math.random() * 150);
-        bubble.frequency.setValueAtTime(baseFreq, bubbleStart);
-        bubble.frequency.exponentialRampToValueAtTime(baseFreq * 0.5, bubbleStart + bubbleDuration);
-        
-        // Random pan for spatial effect
-        const panner = audioContext.createStereoPanner();
-        panner.pan.setValueAtTime((Math.random() * 0.4) - 0.2, bubbleStart); // Slight random pan
-        
-        // Create envelope for bubble volume
-        const bubbleGain = audioContext.createGain();
-        bubbleGain.gain.setValueAtTime(0.01, bubbleStart);
-        bubbleGain.gain.exponentialRampToValueAtTime(0.3 + (Math.random() * 0.2), bubbleStart + 0.01);
-        bubbleGain.gain.exponentialRampToValueAtTime(0.01, bubbleStart + bubbleDuration);
-        
-        // Connect bubble path
-        bubble.connect(bubbleGain);
-        bubbleGain.connect(panner);
-        panner.connect(masterGain);
-        
-        // Schedule bubble start/stop
-        bubble.start(bubbleStart);
-        bubble.stop(bubbleStart + bubbleDuration);
+        rumbleGain.gain.linearRampToValueAtTime(0.6 * intensityVariation, variationTime);
+        rumbleGain.gain.linearRampToValueAtTime(0.5, variationTime + 0.1);
     }
     
-    // Create "vibrating trumpet" effect for the end of the fart
-    if (Math.random() > 0.6) { // Only sometimes for variety
-        const trumpet = audioContext.createOscillator();
-        trumpet.type = 'sawtooth';
+    // Add occasional deep "pops" for realism
+    const numPops = Math.floor(Math.random() * 2); // 0-1 pops
+    for (let i = 0; i < numPops; i++) {
+        const popTime = now + 0.3 + Math.random() * (duration - 0.6);
+        const popDuration = 0.05 + Math.random() * 0.03;
         
-        const trumpetFilter = audioContext.createBiquadFilter();
-        trumpetFilter.type = 'lowpass';
-        trumpetFilter.frequency.setValueAtTime(800, now + duration * 0.7);
-        trumpetFilter.frequency.exponentialRampToValueAtTime(200, now + duration);
-        trumpetFilter.Q.setValueAtTime(3, now);
+        const popOsc = audioContext.createOscillator();
+        popOsc.type = 'sine';
+        popOsc.frequency.setValueAtTime(80, popTime);
+        popOsc.frequency.exponentialRampToValueAtTime(45, popTime + popDuration);
         
-        const trumpetGain = audioContext.createGain();
-        trumpetGain.gain.setValueAtTime(0.01, now + duration * 0.7);
-        trumpetGain.gain.exponentialRampToValueAtTime(0.15, now + duration * 0.75);
-        trumpetGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        const popGain = audioContext.createGain();
+        popGain.gain.setValueAtTime(0.01, popTime);
+        popGain.gain.exponentialRampToValueAtTime(0.6, popTime + 0.01);
+        popGain.gain.exponentialRampToValueAtTime(0.01, popTime + popDuration);
         
-        // Fast LFO for "lip flapping" effect
-        const trumpetLFO = audioContext.createOscillator();
-        trumpetLFO.type = 'triangle';
-        trumpetLFO.frequency.setValueAtTime(25 + Math.random() * 10, now);
+        popOsc.connect(popGain);
+        popGain.connect(masterGain);
         
-        const trumpetLFOGain = audioContext.createGain();
-        trumpetLFOGain.gain.setValueAtTime(50, now);
-        
-        trumpetLFO.connect(trumpetLFOGain);
-        trumpetLFOGain.connect(trumpet.detune);
-        
-        trumpet.frequency.setValueAtTime(120, now + duration * 0.7);
-        trumpet.frequency.exponentialRampToValueAtTime(70, now + duration);
-        
-        trumpet.connect(trumpetFilter);
-        trumpetFilter.connect(trumpetGain);
-        trumpetGain.connect(masterGain);
-        
-        trumpetLFO.start(now + duration * 0.7);
-        trumpetLFO.stop(now + duration);
-        trumpet.start(now + duration * 0.7);
-        trumpet.stop(now + duration);
+        popOsc.start(popTime);
+        popOsc.stop(popTime + popDuration);
     }
     
-    // Main routing
-    noise.connect(noiseFilter);
-    noiseFilter.connect(resonantFilter1);
-    resonantFilter1.connect(resonantFilter2);
-    resonantFilter2.connect(wobbleFilter);
-    wobbleFilter.connect(noiseGain);
+    // Connect tremolo modulation
+    tremoloLFO.connect(tremoloGain);
+    tremoloGain.connect(rumbleGain.gain);
+    
+    // Connect all components
+    rumbleOsc.connect(rumbleGain);
+    rumbleGain.connect(masterGain);
+    
+    harmonic2.connect(harmonic2Gain);
+    harmonic2Gain.connect(masterGain);
+    
+    subBass.connect(subBassGain);
+    subBassGain.connect(masterGain);
+    
+    noiseSource.connect(bubbleFilter);
+    bubbleFilter.connect(noiseGain);
     noiseGain.connect(masterGain);
     
-    // Final output path with compression for "wetness"
     masterGain.connect(compressor);
     compressor.connect(audioContext.destination);
     
-    // Start the continuous components
-    wobbleLFO.start(now);
-    wobbleLFO.stop(now + duration);
-    noise.start(now);
-    noise.stop(now + duration);
+    // Start all components
+    rumbleOsc.start(now);
+    rumbleOsc.stop(now + duration);
     
-    return duration;
+    harmonic2.start(now);
+    harmonic2.stop(now + duration);
+    
+    subBass.start(now);
+    subBass.stop(now + duration);
+    
+    noiseSource.start(now);
+    noiseSource.stop(now + duration);
+    
+    tremoloLFO.start(now);
+    tremoloLFO.stop(now + duration);
 }
 
-// Helper function to prepare all audio elements for better compatibility
-function prepareAllAudioElements() {
-    console.log("Preparing all audio elements");
-    
-    // Don't call load() on audio elements as it can interfere with playback
-    // Just ensure they are ready
-    if (fartSound) {
-        fartSound.muted = false;
-        fartSound.volume = 0.8;
-    }
-    if (hitSound) {
-        hitSound.muted = false;
-        hitSound.volume = 0.8;
-    }
-}
-
-// Create a visual fart cloud when the frog flaps
+// Create a visual fart cloud effect when Filip farts
 function createFartCloud() {
     try {
-        // Limit number of simultaneous fart clouds
-        const maxClouds = 3;
-        const existingClouds = document.querySelectorAll('.fart-cloud').length;
-        
-        if (existingClouds >= maxClouds) {
-            // Remove oldest cloud if at limit
-            const oldestCloud = document.querySelector('.fart-cloud');
-            if (oldestCloud && oldestCloud.parentNode) {
-                oldestCloud.parentNode.removeChild(oldestCloud);
-            }
-        }
-        
-        // Create the cloud element
+        // Create fart cloud element
         const fartCloud = document.createElement('div');
         fartCloud.className = 'fart-cloud';
         
-        // Avoid getBoundingClientRect() which causes layout thrashing
-        // Use direct position values instead
-        const cloudLeft = 40; // Position it right behind the frog
-        const cloudTop = frogPosition + 15; // Slightly below center of frog
+        // Position it behind Filip
+        const frogRect = frog.getBoundingClientRect();
+        const gameAreaRect = gameArea.getBoundingClientRect();
         
-        // Set cloud position
-        fartCloud.style.left = `${cloudLeft}px`;
-        fartCloud.style.top = `${cloudTop}px`;
+        // Calculate position relative to game area
+        const frogX = frogRect.left - gameAreaRect.left;
+        const frogY = frogRect.top - gameAreaRect.top;
         
-        // Add fart type-specific styling based on the current fart type
-        const currentFartType = window.currentFartType || 'short_wet';
+        // Position cloud behind and slightly below Filip
+        const cloudX = frogX - 40; // Behind Filip
+        const cloudY = frogY + 20; // Slightly below
         
-        // Match cloud style to fart sound type
-        if (currentFartType === 'squeaky') {
-            fartCloud.classList.add('squeaky');
-        } else if (currentFartType === 'explosive') {
-            fartCloud.classList.add('explosive');
-        } else if (currentFartType === 'short_wet') {
-            fartCloud.classList.add('wet');
-        } else if (currentFartType === 'long_rippling') {
-            fartCloud.classList.add('rippling');
-        } else if (currentFartType === 'deep_rumble') {
-            fartCloud.classList.add('rumble');
+        fartCloud.style.cssText = `
+            position: absolute;
+            left: ${cloudX}px;
+            top: ${cloudY}px;
+            width: 60px;
+            height: 40px;
+            background-image: url('images/fart-cloud.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.8;
+            z-index: 5;
+            pointer-events: none;
+            transform-origin: center;
+            animation: fartCloudAnimation 1.5s ease-out forwards;
+        `;
+        
+        // Add the animation keyframes if they don't exist
+        if (!document.querySelector('#fart-cloud-styles')) {
+            const style = document.createElement('style');
+            style.id = 'fart-cloud-styles';
+            style.textContent = `
+                @keyframes fartCloudAnimation {
+                    0% {
+                        transform: scale(0.3) rotate(-10deg);
+                        opacity: 0.9;
+                    }
+                    30% {
+                        transform: scale(1.2) rotate(5deg);
+                        opacity: 0.8;
+                    }
+                    60% {
+                        transform: scale(1.5) rotate(-2deg);
+                        opacity: 0.6;
+                    }
+                    100% {
+                        transform: scale(2.0) rotate(3deg);
+                        opacity: 0;
+                    }
+                }
+                
+                .fart-cloud {
+                    filter: hue-rotate(0deg);
+                }
+            `;
+            document.head.appendChild(style);
         }
         
-        // Add the cloud to the game area
+        // Add cloud to game area
         gameArea.appendChild(fartCloud);
         
+        // Match cloud color/type to the current fart type if available
+        if (window.currentFartType) {
+            switch (window.currentFartType) {
+                case 'explosive':
+                    fartCloud.style.filter = 'hue-rotate(20deg) brightness(1.3) contrast(1.2)';
+                    fartCloud.style.animation = 'fartCloudAnimation 1.0s ease-out forwards';
+                    break;
+                case 'deep_rumble':
+                    fartCloud.style.filter = 'hue-rotate(40deg) brightness(0.9) sepia(0.3)';
+                    fartCloud.style.animation = 'fartCloudAnimation 2.0s ease-out forwards';
+                    break;
+                case 'short_wet':
+                    fartCloud.style.filter = 'hue-rotate(120deg) brightness(1.1) saturate(1.3)';
+                    break;
+                case 'squeaky':
+                    fartCloud.style.filter = 'hue-rotate(200deg) brightness(1.2) saturate(0.8)';
+                    fartCloud.style.animation = 'fartCloudAnimation 1.2s ease-out forwards';
+                    break;
+                case 'long_rippling':
+                    fartCloud.style.filter = 'hue-rotate(80deg) brightness(1.0) saturate(1.1)';
+                    fartCloud.style.animation = 'fartCloudAnimation 1.8s ease-out forwards';
+                    break;
+            }
+        }
+        
         // Remove the cloud after animation completes
-        const animationDuration = getAnimationDurationForType(currentFartType);
         setTimeout(() => {
-            if (fartCloud.parentNode) {
+            if (fartCloud && fartCloud.parentNode) {
                 fartCloud.parentNode.removeChild(fartCloud);
             }
-        }, animationDuration);
+        }, 2500);
         
-    } catch (e) {
-        console.error('Error creating fart cloud:', e);
-    }
-}
-
-// Helper function to get animation duration based on fart type
-function getAnimationDurationForType(fartType) {
-    switch (fartType) {
-        case 'squeaky': return 600; // 0.6s
-        case 'explosive': return 1000; // 1s
-        case 'short_wet': return 1200; // 1.2s
-        case 'long_rippling': return 1500; // 1.5s
-        case 'deep_rumble': return 1300; // 1.3s
-        default: return 1000; // Default 1s
+        console.log(`Fart cloud created with type: ${window.currentFartType || 'default'}`);
+        
+    } catch (error) {
+        console.error('Error creating fart cloud:', error);
     }
 }
 
