@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Filip the Farty Frog</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-area">
+            <!-- Background clouds -->
+            <div class="cloud medium cloud-1"></div>
+            <div class="cloud large cloud-2"></div>
+            <div class="cloud small cloud-3"></div>
+            <div class="cloud medium cloud-4"></div>
+            <div class="cloud small cloud-5"></div>
+            <div class="cloud large cloud-6"></div>
+            
+            <div id="frog" class="frog">
+                <div class="frog-body">
+                    <div class="frog-eye"><div class="frog-pupil"></div></div>
+                    <div class="frog-mouth"></div>
+                </div>
+                <div class="frog-legs">
+                    <div class="frog-thigh front"></div>
+                    <div class="frog-leg front"></div>
+                    <div class="frog-thigh back"></div>
+                    <div class="frog-leg back"></div>
+                </div>
+            </div>
+            <div id="score">0</div>
+            <div id="high-score">Best: 0</div>
+            <div id="fps-counter" style="position: absolute; top: 10px; left: 10px; color: yellow; font-size: 14px; background: rgba(0,0,0,0.8); padding: 5px 8px; border-radius: 5px; font-family: monospace; z-index: 1000; font-weight: bold; white-space: nowrap;">FPS: --</div>
+            <div id="start-message"><h1 class="game-title">Filip the Farty Frog</h1>Help Filip fart his way through the pipes!<br>Press Space or Tap to Start</div>
+            <div id="game-over" class="hidden">Filip crashed!<br>Score: <span id="final-score"></span><br>Best: <span id="final-high-score"></span><br>Press Space or Tap to Restart</div>
+        </div>
+    </div>
+
+    <!-- Load sound effects -->
+    <audio id="fart-sound" src="sounds/fart.mp3" preload="auto"></audio>
+    <audio id="hit-sound" src="sounds/hit.mp3" preload="auto"></audio>
+    
+    <script src="game.js"></script>
+</body>
+</html>

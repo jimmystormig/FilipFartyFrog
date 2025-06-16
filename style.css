@@ -1,0 +1,605 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    background-color: #70c5ce;
+    background-image: linear-gradient(to bottom, #4fc3f7, #70c5ce, #81d4fa);
+    font-family: Arial, sans-serif;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+.game-title {
+    color: #ffffff;
+    font-family: 'Fredoka', cursive, Arial, sans-serif;
+    font-weight: 700;
+    font-size: 2.2rem;
+    text-shadow: 3px 3px 0 #2e7d32, 
+                 -1px -1px 0 #2e7d32, 
+                 1px -1px 0 #2e7d32, 
+                 -1px 1px 0 #2e7d32, 
+                 1px 1px 0 #2e7d32;
+    margin-bottom: 15px;
+    text-align: center;
+    letter-spacing: 1px;
+}
+
+.game-container {
+    position: relative;
+    width: 320px;
+    height: 480px;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    border: 2px solid #000;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    touch-action: manipulation;
+}
+
+.game-area {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: #70c5ce;
+    background-image: linear-gradient(to bottom, #4FC3F7 0%, #81D4FA 40%, #B3E5FC 100%);
+    overflow: hidden;
+}
+
+/* Clouds */
+.cloud {
+    position: absolute;
+    background-color: white;
+    border-radius: 50%;
+    opacity: 0.8;
+    filter: blur(2px);
+    z-index: 0;
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+.cloud::before,
+.cloud::after {
+    content: '';
+    position: absolute;
+    background-color: white;
+    border-radius: 50%;
+}
+
+.cloud.small {
+    width: 40px;
+    height: 20px;
+}
+
+.cloud.small::before {
+    width: 18px;
+    height: 18px;
+    top: -10px;
+    left: 8px;
+}
+
+.cloud.small::after {
+    width: 15px;
+    height: 15px;
+    top: -6px;
+    right: 10px;
+}
+
+.cloud.medium {
+    width: 70px;
+    height: 30px;
+}
+
+.cloud.medium::before {
+    width: 30px;
+    height: 30px;
+    top: -15px;
+    left: 12px;
+}
+
+.cloud.medium::after {
+    width: 25px;
+    height: 25px;
+    top: -10px;
+    right: 15px;
+}
+
+.cloud.large {
+    width: 100px;
+    height: 45px;
+}
+
+.cloud.large::before {
+    width: 50px;
+    height: 50px;
+    top: -20px;
+    left: 20px;
+}
+
+.cloud.large::after {
+    width: 40px;
+    height: 40px;
+    top: -15px;
+    right: 20px;
+}
+
+.cloud-1 {
+    top: 15%;
+    left: 10%;
+}
+
+.cloud-2 {
+    top: 8%;
+    left: 65%;
+}
+
+.cloud-3 {
+    top: 25%;
+    left: 30%;
+}
+
+.cloud-4 {
+    top: 35%;
+    left: 80%;
+}
+
+.cloud-5 {
+    top: 50%;
+    left: 15%;
+}
+
+.cloud-6 {
+    top: 70%;
+    left: 55%;
+}
+
+.frog {
+    position: absolute;
+    width: 60px;
+    height: 45px;
+    left: 50px;
+    z-index: 2;
+    filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+    transform-origin: center center;
+    will-change: top, transform; /* Hint for browser optimization */
+    animation: frogFloating 1s infinite alternate ease-in-out;
+    display: block !important; /* Force display */
+    overflow: visible;
+    /* GPU acceleration hints */
+    backface-visibility: hidden;
+}
+
+.frog-body {
+    width: 40px;
+    height: 28px;
+    background-color: #4CAF50;
+    border-radius: 50% 60% 45% 40%;
+    position: relative;
+    overflow: visible;
+    transform: rotate(5deg);
+    /* Add lighter belly color with a gradient */
+    background-image: linear-gradient(to bottom right, #4CAF50, #8BC34A);
+    /* Add indents at the bottom where legs connect */
+    box-shadow: 0 3px 0 -2px #4CAF50, 
+                6px 6px 0 -5px #4CAF50,
+                -6px 6px 0 -5px #4CAF50;
+}
+
+.frog-eye {
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 4px;
+    left: 30px;
+    z-index: 3;
+}
+
+.frog-pupil {
+    width: 5px;
+    height: 5px;
+    background-color: black;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 3px;
+}
+
+.frog-mouth {
+    width: 12px;
+    height: 4px;
+    background-color: #E91E63;
+    border-radius: 0 0 10px 5px;
+    position: absolute;
+    bottom: 10px;
+    left: 28px;
+    transform: rotate(-5deg);
+}
+
+.frog-legs {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.frog-leg {
+    position: absolute;
+    background-color: #388E3C;
+    border-radius: 4px;
+    transform-origin: top center;
+}
+
+.frog-leg.front {
+    width: 5px;
+    height: 13px;
+    bottom: 0;
+    left: 28px;
+    transform: rotate(10deg);
+    animation: gentleFloatFront 2s infinite alternate ease-in-out;
+    z-index: 2;
+    /* Connect leg to thigh */
+    top: 15px;
+}
+
+.frog-leg.front::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 4px;
+    background-color: #388E3C;
+    border-radius: 3px;
+    bottom: -2px;
+    left: -3px;
+    transform: rotate(-10deg);
+}
+
+.frog-leg.back {
+    width: 5px;
+    height: 15px;
+    bottom: 0;
+    left: 12px;
+    transform: rotate(-5deg);
+    animation: gentleFloatBack 2s infinite alternate-reverse ease-in-out;
+    z-index: 2;
+    /* Connect leg to thigh */
+    top: 16px;
+}
+
+.frog-leg.back::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 4px;
+    background-color: #388E3C;
+    border-radius: 3px;
+    bottom: -2px;
+    left: -4px;
+    transform: rotate(5deg);
+}
+
+.frog-thigh {
+    position: absolute;
+    background-color: #4CAF50;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.frog-thigh.front {
+    width: 12px;
+    height: 10px;
+    bottom: 8px;
+    left: 25px;
+    transform: rotate(5deg);
+    background-image: linear-gradient(to bottom right, #4CAF50, #8BC34A);
+    animation: gentleThighFloatFront 2s infinite alternate ease-in-out;
+}
+
+.frog-thigh.back {
+    width: 14px;
+    height: 12px;
+    bottom: 8px;
+    left: 8px;
+    transform: rotate(-5deg);
+    background-image: linear-gradient(to bottom right, #4CAF50, #8BC34A);
+    animation: gentleThighFloatBack 2s infinite alternate-reverse ease-in-out;
+}
+
+@keyframes frogFloating {
+    from { transform: translateY(0); }
+    to { transform: translateY(-3px); }
+}
+
+@keyframes gentleFloatFront {
+    from { transform: rotate(10deg); }
+    to { transform: rotate(15deg); }
+}
+
+@keyframes gentleFloatBack {
+    from { transform: rotate(-5deg); }
+    to { transform: rotate(0deg); }
+}
+
+@keyframes gentleThighFloatFront {
+    from { transform: rotate(5deg); }
+    to { transform: rotate(8deg); }
+}
+
+@keyframes gentleThighFloatBack {
+    from { transform: rotate(-5deg); }
+    to { transform: rotate(-2deg); }
+}
+
+.flap {
+    animation: flap 0.2s;
+}
+
+@keyframes flap {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(-10deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+/* Animation for the frog's mouth during flapping */
+.flap .frog-mouth {
+    animation: mouthMove 0.2s;
+}
+
+@keyframes mouthMove {
+    0% { height: 5px; }
+    50% { height: 7px; }
+    100% { height: 5px; }
+}
+
+/* Animation for the frog's legs during flapping */
+.flap .frog-leg.front {
+    animation: frontLegFlap 0.2s !important;
+}
+
+.flap .frog-leg.back {
+    animation: backLegFlap 0.2s !important;
+}
+
+@keyframes frontLegFlap {
+    0% { transform: rotate(10deg); }
+    50% { transform: rotate(60deg); }
+    100% { transform: rotate(10deg); }
+}
+
+@keyframes backLegFlap {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(45deg); }
+    100% { transform: rotate(-5deg); }
+}
+
+/* Override during flapping */
+.flap .frog-thigh.front {
+    animation: frontThighFlap 0.2s !important;
+}
+
+.flap .frog-thigh.back {
+    animation: backThighFlap 0.2s !important;
+}
+
+@keyframes frontThighFlap {
+    0% { transform: rotate(5deg); }
+    50% { transform: rotate(20deg); }
+    100% { transform: rotate(5deg); }
+}
+
+@keyframes backThighFlap {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(15deg); }
+    100% { transform: rotate(-5deg); }
+}
+
+.pipe {
+    position: absolute;
+    width: 52px;
+    z-index: 1;
+    background-color: #4CAF50;
+    border: 3px solid #2E7D32;
+    box-sizing: border-box;
+    box-shadow: 2px 0px 4px rgba(0, 0, 0, 0.3);
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    left: 0; /* Positioned using transform instead of left */
+}
+
+/* Enhanced pipes for mobile devices */
+@media (max-width: 600px), (pointer: coarse) {
+    .pipe {
+        width: 64px; /* Make pipes wider on mobile for easier visibility and gameplay */
+        border: 4px solid #2E7D32;
+        background-color: #66BB6A; /* Brighter green */
+        box-shadow: 3px 0px 6px rgba(0, 0, 0, 0.4);
+    }
+}
+
+.pipe-top {
+    top: 0;
+    border-bottom: none;
+    border-radius: 0 0 4px 4px;
+}
+
+.pipe-bottom {
+    bottom: 0;
+    border-top: none;
+    border-radius: 4px 4px 0 0;
+}
+
+/* Pipe details */
+.pipe::after {
+    content: '';
+    position: absolute;
+    background-color: #388E3C;
+    width: 70%;
+    height: 100%;
+    left: 15%;
+    opacity: 0.7;
+}
+
+#score {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    font-size: 40px;
+    font-weight: bold;
+    color: white;
+    z-index: 1001;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#high-score {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFD700;
+    z-index: 1001;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    font-family: 'Fredoka', cursive, Arial, sans-serif;
+}
+
+#start-message, #game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    font-weight: bold;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 10;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    border: 2px solid #4CAF50;
+    font-family: 'Fredoka', cursive, Arial, sans-serif;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    line-height: 1.4;
+    width: 85%;
+    max-width: 300px;
+}
+
+#start-message .game-title {
+    margin-top: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+.fart-cloud {
+    position: absolute;
+    width: 35px;
+    height: 25px;
+    background-color: rgba(161, 136, 127, 0.8);
+    border-radius: 15px;
+    z-index: 1;
+    opacity: 0.85;
+    filter: blur(1px);
+    transform-origin: center;
+    animation: fadeOut 1s forwards;
+}
+
+/* Different fart cloud styles based on sound type */
+.fart-cloud.squeaky {
+    width: 25px;
+    height: 18px;
+    background-color: rgba(180, 160, 150, 0.7);
+    border-radius: 12px;
+    animation: squeakyFade 0.6s forwards;
+}
+
+.fart-cloud.explosive {
+    width: 50px;
+    height: 40px;
+    background-color: rgba(150, 120, 110, 0.9);
+    border-radius: 25px;
+    animation: explosiveFade 1s forwards;
+}
+
+.fart-cloud.wet {
+    width: 40px;
+    height: 30px;
+    background-color: rgba(140, 110, 100, 0.85);
+    border-radius: 20px;
+    filter: blur(2px);
+    animation: wetFade 1.2s forwards;
+}
+
+.fart-cloud.rippling {
+    width: 45px;
+    height: 32px;
+    background-color: rgba(155, 130, 120, 0.8);
+    border-radius: 22px;
+    animation: ripplingFade 1.5s forwards;
+}
+
+.fart-cloud.rumble {
+    width: 48px;
+    height: 35px;
+    background-color: rgba(130, 100, 90, 0.9);
+    border-radius: 24px;
+    animation: rumbleFade 1.3s forwards;
+}
+
+@keyframes fadeOut {
+    0% { opacity: 0.85; transform: scale(0.5) rotate(5deg); }
+    50% { opacity: 0.6; transform: scale(1.2) rotate(-5deg); }
+    100% { opacity: 0; transform: scale(1.8) rotate(0deg); }
+}
+
+@keyframes squeakyFade {
+    0% { opacity: 0.7; transform: scale(0.4) rotate(10deg); }
+    30% { opacity: 0.6; transform: scale(0.9) rotate(-5deg); }
+    100% { opacity: 0; transform: scale(1.3) rotate(0deg); }
+}
+
+@keyframes explosiveFade {
+    0% { opacity: 0.9; transform: scale(0.1) rotate(0deg); }
+    20% { opacity: 0.85; transform: scale(1.5) rotate(5deg); }
+    60% { opacity: 0.5; transform: scale(2) rotate(-5deg); }
+    100% { opacity: 0; transform: scale(2.5) rotate(0deg); }
+}
+
+@keyframes wetFade {
+    0% { opacity: 0.85; transform: scale(0.4) rotate(3deg); }
+    40% { opacity: 0.7; transform: scale(1.1) rotate(-3deg); }
+    70% { opacity: 0.5; transform: scale(1.4) rotate(2deg); }
+    100% { opacity: 0; transform: scale(1.8) rotate(0deg); }
+}
+
+@keyframes ripplingFade {
+    0% { opacity: 0.8; transform: scale(0.3) rotate(0deg); }
+    20% { opacity: 0.75; transform: scale(0.8) rotate(5deg); }
+    40% { opacity: 0.7; transform: scale(1.1) rotate(-3deg); }
+    60% { opacity: 0.6; transform: scale(1.3) rotate(2deg); }
+    80% { opacity: 0.4; transform: scale(1.5) rotate(-2deg); }
+    100% { opacity: 0; transform: scale(1.8) rotate(0deg); }
+}
+
+@keyframes rumbleFade {
+    0% { opacity: 0.9; transform: scale(0.5) rotate(0deg); }
+    30% { opacity: 0.8; transform: scale(1.2) rotate(-3deg); }
+    60% { opacity: 0.6; transform: scale(1.5) rotate(3deg); }
+    100% { opacity: 0; transform: scale(2) rotate(0deg); }
+}
