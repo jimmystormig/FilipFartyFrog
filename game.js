@@ -1864,44 +1864,77 @@ function createFartCloud() {
         const cloudX = frogX - 40 - (Math.random() * 10); // Behind Filip with slight variation
         const cloudY = frogY + 15 + (Math.random() * 10); // Slightly below with variation
         
-        // Set cloud style based on fart type
+        // Set cloud size and variation based on fart type
         let width, height;
         switch (fartType) {
             case 0: // Short and high-pitched: small cloud
                 width = 50 * cloudSizeVariation;
                 height = 35 * cloudSizeVariation;
+                fartCloud.classList.add('squeaky');
                 break;
             case 1: // Long and bubbly: medium with bubbles
                 width = 65 * cloudSizeVariation;
                 height = 45 * cloudSizeVariation;
+                fartCloud.classList.add('rippling');
                 break;
             case 2: // Wet and sloppy: larger cloud
                 width = 70 * cloudSizeVariation;
                 height = 50 * cloudSizeVariation;
+                fartCloud.classList.add('wet');
                 break;
             case 3: // Squeaky and high: small elongated cloud
                 width = 45 * cloudSizeVariation;
                 height = 30 * cloudSizeVariation;
+                fartCloud.classList.add('explosive');
                 break;
             case 4: // Deep and rumbly: large wide cloud
                 width = 80 * cloudSizeVariation;
                 height = 55 * cloudSizeVariation;
+                fartCloud.classList.add('rumble');
                 break;
         }
         
+        // Generate organic cloud shape using CSS clip-path with randomized points
+        // Create a blob-like shape for a natural cloud appearance
+        const generateCloudPath = () => {
+            // Create 8-12 random points for the cloud's perimeter
+            const numPoints = 8 + Math.floor(Math.random() * 5);
+            const points = [];
+            
+            for (let i = 0; i < numPoints; i++) {
+                // Calculate position on the perimeter based on angle
+                const angle = (i / numPoints) * Math.PI * 2;
+                // Distance from center varies to create irregular shape
+                const dist = 45 + (Math.random() * 15);
+                // Calculate x,y coordinates
+                const x = 50 + Math.cos(angle) * dist;
+                const y = 50 + Math.sin(angle) * dist;
+                points.push(`${x}% ${y}%`);
+            }
+            
+            // Return the polygon definition
+            return `polygon(${points.join(', ')})`;
+        };
+        
+        const cloudPath = generateCloudPath();
+        
         // Set specific animation keyframes for this cloud
-        const keyframes = `@keyframes fartCloud${Date.now()} {
+        const keyframeId = Date.now() + Math.floor(Math.random() * 1000);
+        const keyframes = `@keyframes fartCloud${keyframeId} {
             0% { 
                 transform: scale(0.2) rotate(${cloudRotation}deg); 
                 opacity: ${cloudOpacity}; 
+                filter: blur(1px);
             }
             20% { 
                 transform: scale(0.8) rotate(${cloudRotation}deg); 
                 opacity: ${cloudOpacity}; 
+                filter: blur(2px);
             }
             100% { 
                 transform: scale(1.2) rotate(${cloudRotation + 5 + Math.random() * 10}deg); 
                 opacity: 0; 
+                filter: blur(4px);
             }
         }`;
         
@@ -1910,6 +1943,7 @@ function createFartCloud() {
         styleSheet.innerText = keyframes;
         document.head.appendChild(styleSheet);
         
+        // Apply styles to create organic cloud shape
         fartCloud.style.cssText = `
             position: absolute;
             left: ${cloudX}px;
@@ -1918,13 +1952,15 @@ function createFartCloud() {
             height: ${height}px;
             background-image: url('images/fart-cloud.png');
             background-size: contain;
-            background-repeat: no-repeat;
             background-position: center;
             opacity: ${cloudOpacity};
             z-index: 5;
             pointer-events: none;
             transform-origin: center;
-            animation: fartCloud${Date.now()} ${animationDuration}s ease-out forwards;
+            border-radius: 50% 50%;
+            clip-path: ${cloudPath};
+            filter: blur(${1 + Math.random() * 1.5}px);
+            animation: fartCloud${keyframeId} ${animationDuration}s ease-out forwards;
         `;
         
         // Add cloud to game area
